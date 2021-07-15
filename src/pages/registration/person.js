@@ -1,6 +1,8 @@
-import {Button, Card, Dropdown, FormControl, InputGroup} from "react-bootstrap";
+import {Button, ButtonGroup, Card, Dropdown, FormControl, InputGroup, Modal, ToggleButton} from "react-bootstrap";
 import {useEffect, useState} from "react";
 import {backendClient} from "../../util/backendClient";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import BootstrapSwitchButton from 'bootstrap-switch-button-react'
 
 export function PeopleForm({amount}) {
   const [people, setPeople] = useState([]);
@@ -14,10 +16,9 @@ export function PeopleForm({amount}) {
 
 export function PersonForm({people, index}) {
   const [person, setPerson] = useState({});
-  const [documentType, setDocumentType] = useState()
-  const [documentId, setDocumentId] = useState();
   const [isNew, setIsNew] = useState(true);
   const [showFields, setShowFields] = useState(false);
+  const [showQuestions, setShowQuestions] = useState(false);
 
   function lookUpPerson() {
     const fetchData = async () => {
@@ -42,9 +43,9 @@ export function PersonForm({people, index}) {
 
   function createPerson() {
     const fetchData = async () => {
-      debugger;
+
       const response = await backendClient.createPerson(person);
-      // const personResponse = await response.json();
+      // debugger;
     }
     fetchData();
   }
@@ -52,10 +53,14 @@ export function PersonForm({people, index}) {
   return (
     <Card>
       <Card.Title>
-        Datos Personales
+        Persona {index}
       </Card.Title>
       <Card.Body>
+        <QuestionsChecker show={showQuestions} setShow={setShowQuestions}/>
         <Card>
+          <Card.Title>
+            Identificación
+          </Card.Title>
           <Card.Body>
             <DocumentTypePicker person={{value: person, setter: setPerson}}/>
             <InputGroup>
@@ -81,6 +86,7 @@ export function PersonForm({people, index}) {
 
         {(showFields) &&
         <Card>
+          Datos
           <InputGroup>
             <InputGroup.Prepend>
               <InputGroup.Text>Primer Nombre</InputGroup.Text>
@@ -164,15 +170,106 @@ export function PersonForm({people, index}) {
             if (isNew) {
               createPerson();
             }
-            people.value.push(person)
-            people.setter(people.value)
+            // people.value.push(person)
+            // people.setter(people.value)
+            setShowQuestions(true);
           }}>
           </Button>
         </Card>
         }
-
       </Card.Body>
     </Card>
+  )
+}
+
+function QuestionsChecker({show, setShow}) {
+  const [questions, setQuestions] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await backendClient.getQuestions();
+      const questionsResponse = await response.json();
+      questionsResponse.map((question) => {
+        question.answer = true
+      });
+      setQuestions(questionsResponse);
+
+      // if (answers.length < questionsResponse.length) {
+      //   [...Array(questionsResponse.length)].map(() => {
+      //     answers.push(true)
+      //   });
+      //   setAnswers(answers);
+      //   debugger;
+      // }
+    }
+    fetchData();
+  }, []);
+
+  return (
+    <Modal show={show} onHide={() => {setShow(false)}}>
+      <Modal.Header>
+        Preguntas de seguridad
+      </Modal.Header>
+      <Modal.Body>
+        {questions.map((question, index) => (
+          <Question index={index} question={question} setAnswer={(a) => {
+            question.answer = a;
+            questions[index] = question;
+            setQuestions(questions);
+          }}/>
+        ))}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="primary">Confirmar</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
+
+function Question({index, question, setAnswer}) {
+  return (
+    <InputGroup>
+      <InputGroup.Prepend>
+        {index}
+      </InputGroup.Prepend>
+      <InputGroup.Text>
+        {question.value}
+      </InputGroup.Text>
+      <BootstrapSwitchButton
+        checked={question.answer}
+        onlabel='Si'
+        offlabel='No'
+        onstyle="success"
+        offstyle="danger"
+        size="xm"
+        width={100}
+        style="border"
+        onChange={(checked) => {
+          setAnswer(checked)
+        }}
+      />
+
+
+      {/*<ButtonGroup className="mb-2">*/}
+      {/*<ToggleButton*/}
+      {/*  variant={answer ? "success" : "outline-success"}*/}
+      {/*  type="radio"*/}
+      {/*  checked={answer}*/}
+      {/*  // onClick={}*/}
+      {/*  onChange={(e) => {*/}
+      {/*    setAnswer(e.currentTarget.checked);*/}
+      {/*    debugger;*/}
+      {/*  }}> Si </ToggleButton>*/}
+      {/*<ToggleButton*/}
+      {/*  variant={answer ? "outline-danger" : "danger"}*/}
+      {/*  type="radio"*/}
+      {/*  checked={!answer}*/}
+      {/*  onChange={(e) => {*/}
+      {/*    setAnswer(!e.currentTarget.checked);*/}
+      {/*    debugger;*/}
+      {/*  }}> No </ToggleButton>*/}
+      {/*</ButtonGroup>*/}
+    </InputGroup>
   )
 }
 
@@ -184,7 +281,7 @@ function DocumentTypePicker({person}) {
     const fetchData = async () => {
       const response = await backendClient.getDocumentTypes();
       const documentTypesResponse = await response.json();
-      if ( !changed ) {
+      if (!changed) {
         person.value.documentType = documentTypesResponse[0];
       }
       setDocumentTypes(documentTypesResponse);

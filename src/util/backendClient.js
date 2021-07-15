@@ -69,6 +69,15 @@ class BackendClient extends Client {
     return fetch(config['backend_url'] + '/registrations/api/text?name=' + name)
   }
 
+  async getQuestions() {
+    const requestOptions = {
+      method: 'GET',
+      headers: {'Content-Type': 'application/json'}
+    };
+
+    return fetch(config['backend_url'] + '/registrations/api/questions')
+  }
+
   async lockTemporalCapacity(event_id, amount) {
     const requestOptions = {
       method: 'POST',

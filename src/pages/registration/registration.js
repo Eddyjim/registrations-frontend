@@ -9,7 +9,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 export function Registration() {
   const styles = registrationStyles();
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(1);
   const [onInscription, setOnInscription] = useState(false)
   const [tempRegistration, setTempRegistration] = useState()
   return (
@@ -44,6 +44,7 @@ function EventSelection({count, tempRegistration, onInscription}) {
   // const [onInscription, setOnInscription] = useState(false)
   const [event, setEvent] = useState();
   const styles = registrationStyles();
+
 
   function getLockTemporalCapacity(event, count) {
     const fetchData = async () => {
@@ -87,7 +88,7 @@ function EventSelection({count, tempRegistration, onInscription}) {
           <Button onClick={() => {
             getLockTemporalCapacity(event, count.value);
             onInscription.setter(true);
-          }}>
+          }} disabled={(count.value <= 0)}>
             Registrar
           </Button>
         </Card>
@@ -112,23 +113,44 @@ function EventPicker({event}) {
   }, []);
 
   return (
-    <InputGroup>
-      <InputGroup.Prepend>
-        Sesión
-      </InputGroup.Prepend>
-      <Dropdown>
-        <Dropdown.Toggle variant="success" id="dropdown-basic">
-          {(event.value !== undefined) && event.value.label}
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {events.map(e => (
-            <Dropdown.Item onClick={() => {
-              event.setter(e)
-            }}>{e.label}</Dropdown.Item>
-          ))}
-        </Dropdown.Menu>
-      </Dropdown>
-    </InputGroup>
+    <Card>
+      <InputGroup>
+        <InputGroup.Prepend>
+          Sesión
+        </InputGroup.Prepend>
+        <Dropdown>
+          <Dropdown.Toggle variant="success" id="dropdown-basic">
+            {(event.value !== undefined) && event.value.label}
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            {events.map(e => (
+              <Dropdown.Item onClick={() => {
+                event.setter(e)
+              }}>{e.label}</Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </InputGroup>
+      {(event.value !== undefined) &&
+      <EventDescriptor event={event.value}/>
+      }
+    </Card>
+  )
+}
+
+function EventDescriptor({event}) {
+  return (
+    <Card>
+      <Card.Body>
+        Fecha: {event.date}
+        <br/>
+        Auditorio: {event.location_name}
+        <br/>
+        Dirección: {event.location_address}
+        <br/>
+        Cupos Disponibles: {event.capacity - event.current_capacity}
+      </Card.Body>
+    </Card>
   )
 }
 
