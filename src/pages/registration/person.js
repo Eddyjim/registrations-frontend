@@ -1,40 +1,144 @@
-import {Button, ButtonGroup, Card, Dropdown, FormControl, InputGroup, Modal, ToggleButton} from "react-bootstrap";
+import {Button, ButtonGroup, Card, Dropdown, Form, FormControl, InputGroup, Modal, ToggleButton} from "react-bootstrap";
 import {useEffect, useState} from "react";
 import {backendClient} from "../../util/backendClient";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import BootstrapSwitchButton from 'bootstrap-switch-button-react'
+import {personStyles} from "./registrationStyles";
+import {TextMessage} from "./registration";
+import {Link} from "react-router-dom";
 
-export function PeopleForm({amount}) {
+export function PeopleForm({amount, event, tempRegistration}) {
   const [people, setPeople] = useState([]);
+  const [finished, setFinished] = useState(false);
+  const [registrations, setRegistrations] = useState();
+  const [endRegistration, setEndRegistration] = useState(false);
+  const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState();
+
+  function getFullName(person) {
+    let name = person.firstName + " ";
+    name += (person.firstName !== undefined) ? person.firstName + " " : " ";
+    name += person.firstSurname + " ";
+    name += (person.secondSurname !== undefined) ? person.secondSurname + " " : " ";
+    return name;
+  }
+
+  function createRegistration() {
+    const fetchData = async () => {
+      const response = await backendClient.register(event, people, tempRegistration);
+      if (response.status === 201) {
+        const json = await response.json();
+        if (json.registrations.length > 0) {
+          debugger;
+          setEndRegistration(true);
+          setError(false);
+          setRegistrations(json.registrations);
+          debugger;
+        }
+      } else if (response.status === 400) {
+        debugger;
+        const json = await response.json();
+        setEndRegistration(true);
+        setError(true);
+        setErrorMessage(json.message);
+        debugger;
+
+      }
+    }
+    fetchData();
+  }
 
   return (
-    [...Array(amount)].map((e, index) => (
-      <PersonForm people={{value: people, setter: setPeople}} index={index}/>
-    ))
+    <>
+      {(!finished) &&
+      <PersonForm people={{value: people, setter: setPeople}} amount={amount} setFinished={setFinished}/>
+      }
+      {(finished) &&
+      <Card>
+        {(endRegistration && !error) &&
+        <EndMessage registrations={registrations}/>
+        }
+        {(endRegistration && error) &&
+        <ErrorMessage errorMessage={errorMessage}/>
+        }
+        {(!endRegistration) &&
+        <>
+          {tempRegistration.temp_id}
+          {event.label}
+          {people.map(person => (
+            <Card>
+              <div>
+                <div>
+                  {person.documentType.name + " " + person.documentId}
+                </div>
+                <div>
+                  {getFullName(person)}
+                </div>
+              </div>
+              <Button onClick={() => {
+                createRegistration();
+              }
+              }>Confirmar</Button>
+            </Card>))
+          }
+        </>
+        }
+      </Card>
+      }
+    </>
   );
 }
 
-export function PersonForm({people, index}) {
+export function PersonForm({people, amount, setFinished}) {
+  const [index, setIndex] = useState(1);
   const [person, setPerson] = useState({});
+  const [documentType, setDocumentType] = useState({});
+  const [documentId, setDocumentId] = useState();
+  const [firstname, setFirstname] = useState();
+  const [middlename, setMiddlename] = useState();
+  const [firstSurname, setFirstSurname] = useState();
+  const [secondSurname, setSecondSurname] = useState();
+  const [birthday, setBirthday] = useState();
+  const [city, setCity] = useState();
+  const [address, setAddress] = useState();
+  const [phone, setPhone] = useState();
   const [isNew, setIsNew] = useState(true);
   const [showFields, setShowFields] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
+  const [termsAndConditions, setTermsAndConditions] = useState(false);
+  const [disableNext, setDisableNext] = useState(true);
+  // const [finished, setFinished] = useState(false);
+  const [deny, setDeny] = useState(false);
+
+  const styles = personStyles();
+
 
   function lookUpPerson() {
     const fetchData = async () => {
-      const response = await backendClient.getPerson(person.documentType.id, person.documentId);
+      const response = await backendClient.getPerson(person.documentType.id, documentId);
       const personResponse = await response.json();
+
       if (personResponse.length > 0) {
         person.firstName = personResponse[0].first_name;
+        setFirstname(personResponse[0].first_name);
         person.middleName = personResponse[0].middle_name;
+        setMiddlename(personResponse[0].middle_name);
         person.firstSurname = personResponse[0].first_surname;
+        setFirstSurname(personResponse[0].first_surname);
         person.secondSurname = personResponse[0].second_surname;
+        setSecondSurname(personResponse[0].second_surname);
         person.birthday = personResponse[0].birthday;
+        setBirthday(personResponse[0].birthday);
         person.city = personResponse[0].city;
+        setCity(personResponse[0].city);
         person.address = personResponse[0].address;
+        setAddress(personResponse[0].address);
         person.phone = personResponse[0].phone;
+        setPhone(personResponse[0].phone);
         setPerson(person);
         setIsNew(false);
+      } else if (personResponse.length === 0 & !isNew) {
+        cleanForm();
       }
       setShowFields(true);
     }
@@ -43,239 +147,216 @@ export function PersonForm({people, index}) {
 
   function createPerson() {
     const fetchData = async () => {
-
       const response = await backendClient.createPerson(person);
-      // debugger;
+
     }
     fetchData();
   }
 
+
+  function cleanForm() {
+    person.firstName = "";
+    setFirstname("");
+    person.middleName = "";
+    setMiddlename("");
+    person.firstSurname = "";
+    setFirstSurname("");
+    person.secondSurname = "";
+    setSecondSurname("");
+    person.birthday = "";
+    setBirthday("");
+    person.city = "";
+    setCity("");
+    person.address = "";
+    setAddress("");
+    person.phone = "";
+    setPhone("");
+    setPerson(person);
+    setIsNew(true);
+  }
+
+  function reset() {
+    debugger;
+    setPerson({});
+    setDocumentId("");
+    setIsNew(true);
+    setShowFields(false);
+    setShowQuestions(false);
+    setTermsAndConditions(false);
+    setDisableNext(true);
+    cleanForm();
+  }
+
   return (
-    <Card>
+    <Card className={styles.person}>
       <Card.Title>
         Persona {index}
       </Card.Title>
-      <Card.Body>
-        <QuestionsChecker show={showQuestions} setShow={setShowQuestions}/>
-        <Card>
-          <Card.Title>
-            Identificación
-          </Card.Title>
-          <Card.Body>
-            <DocumentTypePicker person={{value: person, setter: setPerson}}/>
-            <InputGroup>
-              <InputGroup.Prepend>
-                <InputGroup.Text>Número de Documento</InputGroup.Text>
-              </InputGroup.Prepend>
-              <FormControl value={person.documentId} onChange={e => {
-                const newValue = e.target.value;
-                person.documentId = newValue
-                setPerson(person)
-              }}/>
-            </InputGroup>
-            {(!showFields) &&
-            <Button variant="success" onClick={() => {
-              lookUpPerson()
+      <Card.Body className={styles.personBody}>
+        <QuestionsChecker show={showQuestions} setShow={setShowQuestions}
+                          confirm={() => {
+                            people.value.push(person);
+                            people.setter(people.value)
+                            if (people.value.lenght === amount) {
+                              setFinished(true);
+                            } else {
+                              if (index === amount)
+                                setFinished(true);
+                              else {
+                                setIndex(index + 1);
+                                reset();
+                              }
 
-            }}>
+                            }
+                          }} deny={() => {
 
-            </Button>
-            }
-          </Card.Body>
-        </Card>
-
-        {(showFields) &&
-        <Card>
-          Datos
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Primer Nombre</InputGroup.Text>
-            </InputGroup.Prepend>
-            <FormControl value={person.firstName} onChange={e => {
-              const newValue = e.target.value;
-              person.firstName = newValue
-              setPerson(person)
-            }}/>
-          </InputGroup><InputGroup>
-          <InputGroup.Prepend>
-            <InputGroup.Text>Segundo Nombre</InputGroup.Text>
+          reset();
+        }}/>
+        <DocumentTypePicker person={{value: person, setter: setPerson}}/>
+        <InputGroup className={styles.personInputGroup}>
+          <InputGroup.Prepend className={styles.personInputLabel}>
+            <InputGroup.Text>Número de Documento</InputGroup.Text>
           </InputGroup.Prepend>
-          <FormControl value={person.middleName} onChange={e => {
-            const newValue = e.target.value;
-            person.middleName = newValue
-            setPerson(person)
+          <FormControl type="text" value={documentId} onChange={e => {
+            // person.documentId = e.target.value;
+            if (e.target.value.length > 0)
+              setDisableNext(false);
+            else
+              setDisableNext(true);
+            setDocumentId(e.target.value)
+            // setPerson(person);
           }}/>
+          {(showFields) &&
+          <Button variant="outline-secondary" onClick={() => {
+            debugger;
+            lookUpPerson();
+          }}> Buscar </Button>}
         </InputGroup>
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Primer Apellido</InputGroup.Text>
-            </InputGroup.Prepend>
-            <FormControl value={person.firstSurname} onChange={e => {
-              const newValue = e.target.value;
-              person.firstSurname = newValue
-              setPerson(person)
-            }}/>
-          </InputGroup>
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Segundo Apellido</InputGroup.Text>
-            </InputGroup.Prepend>
-            <FormControl value={person.secondSurname} onChange={e => {
-              const newValue = e.target.value;
-              person.secondSurname = newValue
-              setPerson(person)
-            }}/>
-          </InputGroup>
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Fecha de Nacimiento:</InputGroup.Text>
-            </InputGroup.Prepend>
-            <FormControl type={"date"} value={person.birthday} onChange={e => {
-              const newValue = e.target.value;
-              person.birthday = newValue
-              setPerson(person)
-            }}/>
-          </InputGroup>
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Ciudad:</InputGroup.Text>
-            </InputGroup.Prepend>
-            <FormControl value={person.city} onChange={e => {
-              const newValue = e.target.value;
-              person.city = newValue
-              setPerson(person)
-            }}/>
-          </InputGroup>
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Dirección:</InputGroup.Text>
-            </InputGroup.Prepend>
-            <FormControl value={person.address} onChange={e => {
-              const newValue = e.target.value;
-              person.address = newValue
-              setPerson(person)
-            }}/>
-          </InputGroup>
-          <InputGroup>
-            <InputGroup.Prepend>
-              <InputGroup.Text>Teléfono:</InputGroup.Text>
-            </InputGroup.Prepend>
-            <FormControl value={person.phone} onChange={e => {
-              const newValue = e.target.value;
-              person.phone = newValue
-              setPerson(person)
-            }}/>
-          </InputGroup>
-          <Button variant="success" onClick={() => {
-            if (isNew) {
-              createPerson();
-            }
-            // people.value.push(person)
-            // people.setter(people.value)
-            setShowQuestions(true);
-          }}>
-          </Button>
-        </Card>
+
+        {(!showFields) &&
+        <>
+          <ButtonsSet
+            next={() => {
+              person.documentId = documentId;
+              setPerson(person);
+              lookUpPerson();
+            }}
+            cancel={() => {
+
+            }} disabled={disableNext}/>
+
+        </>
+        }
+        {(showFields) &&
+        <>
+          <div className={styles.personDataHeader}>
+            Datos Personales
+          </div>
+          <Form>
+            <Form.Group controlId="formBasicEmail">
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Primer Nombre</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl value={firstname} onChange={e => {
+                  setFirstname(e.target.value);
+                }}/>
+              </InputGroup>
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Segundo Nombre</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl value={middlename} onChange={e => {
+                  setMiddlename(e.target.value);
+                }}/>
+              </InputGroup>
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Primer Apellido</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl value={firstSurname} onChange={e => {
+                  setFirstname(e.target.value);
+                }}/>
+              </InputGroup>
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Segundo Apellido</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl value={secondSurname} onChange={e => {
+                  setSecondSurname(e.target.value);
+                }}/>
+              </InputGroup>
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Fecha de Nacimiento:</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl type={"date"} value={birthday} onChange={e => {
+                  setBirthday(e.target.value);
+                  // person.birthday = newValue
+                  // setPerson(person)
+                }}/>
+              </InputGroup>
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Ciudad:</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl value={city} onChange={e => {
+                  setCity(e.target.value);
+                }}/>
+              </InputGroup>
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Dirección:</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl value={address} as="textarea" onChange={e => {
+                  setAddress(e.target.value);
+                }}/>
+              </InputGroup>
+              <InputGroup className={styles.personInputGroup}>
+                <InputGroup.Prepend className={styles.personInputLabel}>
+                  <InputGroup.Text>Teléfono:</InputGroup.Text>
+                </InputGroup.Prepend>
+                <FormControl value={phone} onChange={e => {
+                  setPhone(e.target.value);
+                }}/>
+              </InputGroup>
+
+              {(isNew) &&
+              <InputGroup>
+                <TextMessage name={"data-policies"}/>
+                <ToggleButton size="xs" variant="outline-secondary" checked={termsAndConditions} type="checkbox"
+                              onChange={e => {
+                                setTermsAndConditions(e.target.checked)
+                              }}/>
+              </InputGroup>
+              }
+              <ButtonsSet next={() => {
+                if (isNew) {
+                  createPerson();
+                }
+                setShowQuestions(true);
+
+              }} cancel={() => {
+
+              }} disabled={disableNext}
+              />
+            </Form.Group>
+          </Form>
+        </>
         }
       </Card.Body>
     </Card>
   )
 }
 
-function QuestionsChecker({show, setShow}) {
-  const [questions, setQuestions] = useState([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const response = await backendClient.getQuestions();
-      const questionsResponse = await response.json();
-      questionsResponse.map((question) => {
-        question.answer = true
-      });
-      setQuestions(questionsResponse);
-
-      // if (answers.length < questionsResponse.length) {
-      //   [...Array(questionsResponse.length)].map(() => {
-      //     answers.push(true)
-      //   });
-      //   setAnswers(answers);
-      //   debugger;
-      // }
-    }
-    fetchData();
-  }, []);
-
-  return (
-    <Modal show={show} onHide={() => {setShow(false)}}>
-      <Modal.Header>
-        Preguntas de seguridad
-      </Modal.Header>
-      <Modal.Body>
-        {questions.map((question, index) => (
-          <Question index={index} question={question} setAnswer={(a) => {
-            question.answer = a;
-            questions[index] = question;
-            setQuestions(questions);
-          }}/>
-        ))}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="primary">Confirmar</Button>
-      </Modal.Footer>
-    </Modal>
-  );
-}
-
-function Question({index, question, setAnswer}) {
-  return (
-    <InputGroup>
-      <InputGroup.Prepend>
-        {index}
-      </InputGroup.Prepend>
-      <InputGroup.Text>
-        {question.value}
-      </InputGroup.Text>
-      <BootstrapSwitchButton
-        checked={question.answer}
-        onlabel='Si'
-        offlabel='No'
-        onstyle="success"
-        offstyle="danger"
-        size="xm"
-        width={100}
-        style="border"
-        onChange={(checked) => {
-          setAnswer(checked)
-        }}
-      />
-
-
-      {/*<ButtonGroup className="mb-2">*/}
-      {/*<ToggleButton*/}
-      {/*  variant={answer ? "success" : "outline-success"}*/}
-      {/*  type="radio"*/}
-      {/*  checked={answer}*/}
-      {/*  // onClick={}*/}
-      {/*  onChange={(e) => {*/}
-      {/*    setAnswer(e.currentTarget.checked);*/}
-      {/*    debugger;*/}
-      {/*  }}> Si </ToggleButton>*/}
-      {/*<ToggleButton*/}
-      {/*  variant={answer ? "outline-danger" : "danger"}*/}
-      {/*  type="radio"*/}
-      {/*  checked={!answer}*/}
-      {/*  onChange={(e) => {*/}
-      {/*    setAnswer(!e.currentTarget.checked);*/}
-      {/*    debugger;*/}
-      {/*  }}> No </ToggleButton>*/}
-      {/*</ButtonGroup>*/}
-    </InputGroup>
-  )
-}
-
-function DocumentTypePicker({person}) {
+function DocumentTypePicker(
+  {
+    person
+  }
+) {
   const [documentTypes, setDocumentTypes] = useState([]);
   const [changed, setChanged] = useState(false);
+  const styles = personStyles();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -290,25 +371,172 @@ function DocumentTypePicker({person}) {
   }, []);
 
   return (
-    <InputGroup>
-      <InputGroup.Prepend>
-        <InputGroup.Text>Tipo de documento:</InputGroup.Text>
-      </InputGroup.Prepend>
-      <Dropdown>
-        <Dropdown.Toggle variant="success" id="dropdown-basic">
-          {(person.value.documentType !== undefined) && person.value.documentType.name}
-        </Dropdown.Toggle>
-        <Dropdown.Menu>
-          {documentTypes.map(dt => (
-            <Dropdown.Item onClick={() => {
-              // let personObject = ;
-              person.value.documentType = dt;
-              setChanged(true);
-              person.setter(person.value);
-            }}>{dt.name}</Dropdown.Item>
+    <>
+      <InputGroup className={styles.personInputGroup}>
+        <InputGroup.Prepend className={styles.personInputLabel}>
+          <InputGroup.Text>Tipo de documento:</InputGroup.Text>
+        </InputGroup.Prepend>
+        <Dropdown className={styles.documentTypeDropdown}>
+          <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic"
+                           className={styles.documentTypeDropdownLabel}>
+            {(person.value.documentType !== undefined) && person.value.documentType.name}
+          </Dropdown.Toggle>
+          <Dropdown.Menu className={styles.documentTypeDropdownLabel}>
+            {documentTypes.map(dt => (
+              <Dropdown.Item onClick={() => {
+                // let personObject = ;
+                person.value.documentType = dt;
+                setChanged(true);
+                person.setter(person.value);
+              }}>{dt.name}</Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </InputGroup>
+    </>
+  )
+}
+
+function QuestionsChecker(
+  {
+    show, setShow, confirm, deny
+  }
+) {
+  const [questions, setQuestions] = useState([]);
+  let [confirmed, setConfirmed] = useState(true);
+
+  const styles = personStyles();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await backendClient.getQuestions();
+      const questionsResponse = await response.json();
+
+      questionsResponse.map((question) => {
+        question.answer = true
+      });
+      setQuestions(questionsResponse);
+    }
+    fetchData();
+  }, []);
+
+  return (
+    <Modal size="lg" show={show} onHide={() => {
+      setShow(false)
+    }}>
+      {(confirmed) &&
+      <>
+        <Modal.Header>
+          Preguntas de seguridad
+        </Modal.Header>
+        <Modal.Body>
+          {questions.map((question, index) => (
+            <Question index={index} question={question} setQuestionAnswer={(a) => {
+              question.answer = a;
+              questions[index] = question;
+              setQuestions(questions);
+            }}/>
           ))}
-        </Dropdown.Menu>
-      </Dropdown>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={() => {
+            questions.map(question => {
+              confirmed = question.answer && confirmed;
+              setConfirmed(confirmed)
+            })
+            if (confirmed) {
+              confirm();
+            } else {
+              deny();
+            }
+
+          }}>Confirmar</Button>
+        </Modal.Footer>
+      </>
+      }
+      {(!confirmed) && <Card>
+        <TextMessage name={'deny'}/>
+      </Card>
+      }
+    </Modal>
+  );
+}
+
+function Question(
+  {
+    index, question, setQuestionAnswer
+  }
+) {
+  const [answer, setAnswer] = useState(true);
+  const styles = personStyles();
+
+  return (
+    <InputGroup className={styles.question}>
+      <InputGroup.Text className={styles.questionLabel}>
+        {index + 1}
+      </InputGroup.Text>
+      <InputGroup.Text className={styles.questionText}>
+        {question.value}
+      </InputGroup.Text>
+      <ToggleButton
+        checked={answer}
+        variant={(answer) ? "success" : "outline-danger"}
+        type="checkbox"
+        onChange={e => {
+          setAnswer(e.target.checked);
+          setQuestionAnswer(e.target.checked);
+        }}>
+        {(answer) ? "Si" : "No"}
+      </ToggleButton>
     </InputGroup>
+  )
+}
+
+
+function ButtonsSet(
+  {
+    cancel, next, disabled
+  }
+) {
+  const styles = personStyles();
+
+  return (
+    <div className={styles.documentTypeButtons}>
+      <ButtonGroup>
+        <Button size="lg" variant="danger" onClick={() => {
+          cancel();
+        }}> Cancelar </Button>
+        <Button size="lg" variant="primary" disabled={disabled} onClick={() => {
+          next();
+        }}> Siguiente </Button>
+      </ButtonGroup>
+    </div>
+  )
+}
+
+function EndMessage({registrations}) {
+  return (
+    <>
+      <TextMessage name={'registration-complete'}/>
+      {(registrations !== undefined) &&
+      <>
+        {registrations.map(reg => (reg))}
+      </>
+      }
+      <Link to="/registration">
+        <Button >Aceptar</Button>
+      </Link>
+    </>
+  );
+}
+
+function ErrorMessage({errorMessage}) {
+  return (
+    <>
+      {errorMessage}
+      <Link to="/registration">
+        <Button >Aceptar</Button>
+      </Link>
+    </>
   )
 }

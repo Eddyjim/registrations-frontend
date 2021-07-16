@@ -20,24 +20,9 @@ class Client {
 class BackendClient extends Client {
 
   constructor() {
-    super(config.lti_backend);
+    super(config.backend_url);
   }
 
-
-  /**
-   *  Method to obtain the payload using a token
-   * @param token token provided at the redirection
-   */
-  async getLaunchJWTPayload(token) {
-
-    const requestOptions = {
-      method: 'GET',
-      headers: {'Content-Type': 'application/json'}
-    };
-
-    console.log("backend: " + config['lti_backend']);
-    return fetch(config['lti_backend'] + '/ims/deepLink/payloadData?token=' + token, requestOptions);
-  }
 
   /**
    * Method to obtain the Document Types configured in the backend
@@ -122,6 +107,23 @@ class BackendClient extends Client {
     return fetch(config['backend_url'] + '/registrations/api/person', requestOptions)
   }
 
+  async register(event, people, tempRegistration) {
+
+    let documents = [];
+    people.map(person => {
+      documents.push({document_type: person.documentType.id, document_id: person.documentId})
+    });
+    const requestOptions = {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        event: event.id,
+        people: documents,
+        temp_registration: tempRegistration.temp_id
+      })
+    };
+    return fetch(config['backend_url'] + '/registrations/api/registration/registration', requestOptions)
+  }
 }
 
 export const backendClient = new BackendClient(config.lti_backend);

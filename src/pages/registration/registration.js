@@ -1,38 +1,33 @@
 import {Button, Card, Dropdown, FormControl, InputGroup} from "react-bootstrap";
 import {useEffect, useState} from "react";
 import {Plus, ShieldMinus} from "react-bootstrap-icons";
-import {PeopleForm, PersonForm} from "./person";
+import {PeopleForm} from "./person";
 import {backendClient} from "../../util/backendClient";
 import {registrationStyles} from "./registrationStyles";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
 export function Registration() {
-  const styles = registrationStyles();
   const [count, setCount] = useState(1);
-  const [onInscription, setOnInscription] = useState(false)
-  const [tempRegistration, setTempRegistration] = useState()
+  const [onInscription, setOnInscription] = useState(false);
+  const [tempRegistration, setTempRegistration] = useState();
+  const [event, setEvent] = useState({});
+  const styles = registrationStyles();
+
   return (
-    <Card>
-      <Card.Body className={styles.registration}>
+    <Card className={styles.registration}>
+      <Card.Title>Incripciones</Card.Title>
+      <Card.Body className={styles.registrationBody}>
         <EventSelection count={{
           value: count, setter: (i) => {
             setCount(i)
           }
         }} tempRegistration={{value: tempRegistration, setter: setTempRegistration}}
-                        onInscription={{value: onInscription, setter: setOnInscription}}/>
+                        onInscription={{value: onInscription, setter: setOnInscription}} event={{value:event, setter:setEvent}}/>
         {(tempRegistration !== undefined) && tempRegistration.message}
         {(onInscription === true) &&
-        <Card>
-          <Card.Body>
-
-            {/*<TextMessage name={'timelimit'} />*/}
-            <PeopleForm amount={count}/>
-          </Card.Body>
-        </Card>
+        <PeopleForm amount={count} event={event} tempRegistration={tempRegistration}/>
         }
-
-
       </Card.Body>
 
     </Card>
@@ -40,36 +35,38 @@ export function Registration() {
   );
 }
 
-function EventSelection({count, tempRegistration, onInscription}) {
+function EventSelection({count, tempRegistration, onInscription, event}) {
   // const [onInscription, setOnInscription] = useState(false)
-  const [event, setEvent] = useState();
+  // const [event, setEvent] = useState();
+  const [registration, setRegistration] = useState();
   const styles = registrationStyles();
 
-
   function getLockTemporalCapacity(event, count) {
+    debugger;
     const fetchData = async () => {
-      const response = await backendClient.lockTemporalCapacity(event.id, count);
+      const response = await backendClient.lockTemporalCapacity(event.value.id, count);
       const tempRegistrationResponse = await response.json();
+      debugger;
+      setRegistration(registration);
       tempRegistration.setter(tempRegistrationResponse)
     }
 
-    fetchData()
+    fetchData();
+    debugger;
     // tempRegistrationCallback(tempRegistration);
   }
 
   return (
-    <Card className={styles.eventPicker}>
-      <Card.Body>
-        {(onInscription.value === false) &&
-        <Card>
-          <Card.Body>
-            <EventPicker event={{value: event, setter: setEvent}}/>
-            <InputGroup>
-              <InputGroup.Prepend>
-                <InputGroup.Text>Número de personas a registrar:</InputGroup.Text>
-              </InputGroup.Prepend>
-              <FormControl value={count.value}/>
-            </InputGroup>
+    <>
+      {(onInscription.value === false) &&
+      <Card className={styles.eventPicker}>
+        <Card.Body className={styles.eventPickerBody}>
+          <EventPicker event={event}/>
+          <InputGroup>
+            <InputGroup.Prepend className={styles.eventPickerLabel}>
+              <InputGroup.Text>Número de personas a registrar:</InputGroup.Text>
+            </InputGroup.Prepend>
+            <FormControl value={count.value}/>
             <Button variant="danger" onClick={() => {
               if (count.value > 0) {
                 count.setter(count.value - 1)
@@ -83,24 +80,26 @@ function EventSelection({count, tempRegistration, onInscription}) {
             }}>
               <Plus/>
             </Button>
-          </Card.Body>
+          </InputGroup>
 
-          <Button onClick={() => {
-            getLockTemporalCapacity(event, count.value);
-            onInscription.setter(true);
-          }} disabled={(count.value <= 0)}>
-            Registrar
-          </Button>
-        </Card>
-        }
+        </Card.Body>
 
-      </Card.Body>
-    </Card>
+        <Button onClick={() => {
+          debugger;
+          getLockTemporalCapacity(event, count.value);
+          onInscription.setter(true);
+        }} disabled={(count.value <= 0)}>
+          Registrar
+        </Button>
+      </Card>
+      }
+    </>
   )
 }
 
 function EventPicker({event}) {
   const [events, setEvents] = useState([]);
+  const styles = registrationStyles();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -113,18 +112,18 @@ function EventPicker({event}) {
   }, []);
 
   return (
-    <Card>
+    <>
       <InputGroup>
-        <InputGroup.Prepend>
-          Sesión
+        <InputGroup.Prepend className={styles.eventPickerLabel}>
+          <InputGroup.Text>Sesión</InputGroup.Text>
         </InputGroup.Prepend>
-        <Dropdown>
-          <Dropdown.Toggle variant="success" id="dropdown-basic">
+        <Dropdown variant="outline-secondary" className={styles.sessionPicker}>
+          <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic" className={styles.sessionPickerLabel}>
             {(event.value !== undefined) && event.value.label}
           </Dropdown.Toggle>
-          <Dropdown.Menu>
+          <Dropdown.Menu className={styles.sessionPickerLabel}>
             {events.map(e => (
-              <Dropdown.Item onClick={() => {
+              <Dropdown.Item className={styles.sessionPickerDropdownLabel} onClick={() => {
                 event.setter(e)
               }}>{e.label}</Dropdown.Item>
             ))}
@@ -134,7 +133,7 @@ function EventPicker({event}) {
       {(event.value !== undefined) &&
       <EventDescriptor event={event.value}/>
       }
-    </Card>
+    </>
   )
 }
 
@@ -154,7 +153,7 @@ function EventDescriptor({event}) {
   )
 }
 
-function TextMessage({name}) {
+export function TextMessage({name}) {
   const [message, setMessage] = useState();
   useEffect(() => {
     const fetchData = async () => {
@@ -166,10 +165,8 @@ function TextMessage({name}) {
   }, []);
 
   return (
-    <Card>
-      <Card.Body>
-        {(message !== undefined) && message.value}
-      </Card.Body>
-    </Card>
+    <>
+      {(message !== undefined) && message.value}
+    </>
   )
 }
