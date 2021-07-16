@@ -64,7 +64,6 @@ export function PeopleForm({amount, event, tempRegistration}) {
         }
         {(!endRegistration) &&
         <>
-          {tempRegistration.temp_id}
           {event.label}
           {people.map(person => (
             <Card>
