@@ -42,17 +42,13 @@ function EventSelection({count, tempRegistration, onInscription, event}) {
   const styles = registrationStyles();
 
   function getLockTemporalCapacity(event, count) {
-    debugger;
     const fetchData = async () => {
       const response = await backendClient.lockTemporalCapacity(event.value.id, count);
       const tempRegistrationResponse = await response.json();
-      debugger;
       setRegistration(registration);
       tempRegistration.setter(tempRegistrationResponse)
     }
-
     fetchData();
-    debugger;
     // tempRegistrationCallback(tempRegistration);
   }
 
@@ -85,7 +81,6 @@ function EventSelection({count, tempRegistration, onInscription, event}) {
         </Card.Body>
 
         <Button onClick={() => {
-          debugger;
           getLockTemporalCapacity(event, count.value);
           onInscription.setter(true);
         }} disabled={(count.value <= 0)}>
@@ -169,4 +164,12 @@ export function TextMessage({name}) {
       {(message !== undefined) && message.value}
     </>
   )
+}
+
+export function cancel(tempRegistration){
+  const fetchData = async () => {
+    const response = await backendClient.releaseTemporalCapacity(tempRegistration);
+    window.location.reload();
+  }
+  fetchData();
 }

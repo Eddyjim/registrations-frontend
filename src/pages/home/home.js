@@ -1,4 +1,5 @@
 import logo from "./logo.svg";
+import {Link} from "react-router-dom";
 
 export function Home(){
   return(
@@ -13,7 +14,12 @@ export function Home(){
         target="_blank"
         rel="noopener noreferrer"
       >
-        Learn React
+
+        <Link to="/registro">
+          <button variant="outlined">
+            Registro
+          </button>
+        </Link>
       </a>
     </header>
   )

@@ -4,7 +4,7 @@ import {backendClient} from "../../util/backendClient";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import BootstrapSwitchButton from 'bootstrap-switch-button-react'
 import {personStyles} from "./registrationStyles";
-import {TextMessage} from "./registration";
+import {cancel, TextMessage} from "./registration";
 import {Link} from "react-router-dom";
 
 export function PeopleForm({amount, event, tempRegistration}) {
@@ -51,7 +51,8 @@ export function PeopleForm({amount, event, tempRegistration}) {
   return (
     <>
       {(!finished) &&
-      <PersonForm people={{value: people, setter: setPeople}} amount={amount} setFinished={setFinished}/>
+      <PersonForm people={{value: people, setter: setPeople}} amount={amount} setFinished={setFinished}
+                  tempRegId={tempRegistration}/>
       }
       {(finished) &&
       <Card>
@@ -75,12 +76,12 @@ export function PeopleForm({amount, event, tempRegistration}) {
                   {getFullName(person)}
                 </div>
               </div>
-              <Button onClick={() => {
-                createRegistration();
-              }
-              }>Confirmar</Button>
             </Card>))
           }
+          <Button onClick={() => {
+            createRegistration();
+          }
+          }>Confirmar</Button>
         </>
         }
       </Card>
@@ -89,7 +90,7 @@ export function PeopleForm({amount, event, tempRegistration}) {
   );
 }
 
-export function PersonForm({people, amount, setFinished}) {
+export function PersonForm({people, amount, setFinished, tempRegId}) {
   const [index, setIndex] = useState(1);
   const [person, setPerson] = useState({});
   const [documentType, setDocumentType] = useState({});
@@ -107,6 +108,8 @@ export function PersonForm({people, amount, setFinished}) {
   const [showQuestions, setShowQuestions] = useState(false);
   const [termsAndConditions, setTermsAndConditions] = useState(false);
   const [disableNext, setDisableNext] = useState(true);
+  const [errorMessage, setErrorMessage] = useState();
+  const [dataError, setDataErrors] = useState(false);
   // const [finished, setFinished] = useState(false);
   const [deny, setDeny] = useState(false);
 
@@ -137,7 +140,8 @@ export function PersonForm({people, amount, setFinished}) {
         setPhone(personResponse[0].phone);
         setPerson(person);
         setIsNew(false);
-      } else if (personResponse.length === 0 & !isNew) {
+        setDisableNext(false);
+      } else if (personResponse.length === 0) {
         cleanForm();
       }
       setShowFields(true);
@@ -148,8 +152,32 @@ export function PersonForm({people, amount, setFinished}) {
   function createPerson() {
     const fetchData = async () => {
       const response = await backendClient.createPerson(person);
+      debugger;
+      if (response.status === 400) {
+        const json = response.json();
+        debugger;
+        setDataErrors(true);
 
+        setErrorMessage("Favor llenar bien el formulario")
+      }
+      if (response.status === 201) {
+        setIsNew(false);
+        setDataErrors(false);
+        setShowQuestions(true);
+      }
     }
+
+    person.documentId = documentId;
+    person.firstName = firstname;
+    person.middleName = middlename;
+    person.firstSurname = firstSurname;
+    person.secondSurname = secondSurname;
+    person.birthday = birthday;
+    person.city = city;
+    person.address = address;
+    person.phone = parseInt(phone);
+    setPerson(person);
+    debugger;
     fetchData();
   }
 
@@ -173,6 +201,7 @@ export function PersonForm({people, amount, setFinished}) {
     setPhone("");
     setPerson(person);
     setIsNew(true);
+    setDisableNext(true);
   }
 
   function reset() {
@@ -180,9 +209,9 @@ export function PersonForm({people, amount, setFinished}) {
     setPerson({});
     setDocumentId("");
     setIsNew(true);
-    setShowFields(false);
     setShowQuestions(false);
     setTermsAndConditions(false);
+    setDisableNext(true);
     setDisableNext(true);
     cleanForm();
   }
@@ -204,12 +233,11 @@ export function PersonForm({people, amount, setFinished}) {
                                 setFinished(true);
                               else {
                                 setIndex(index + 1);
+                                setShowFields(false);
                                 reset();
                               }
-
                             }
                           }} deny={() => {
-
           reset();
         }}/>
         <DocumentTypePicker person={{value: person, setter: setPerson}}/>
@@ -220,15 +248,15 @@ export function PersonForm({people, amount, setFinished}) {
           <FormControl type="text" value={documentId} onChange={e => {
             // person.documentId = e.target.value;
             if (e.target.value.length > 0)
-              setDisableNext(false);
-            else
-              setDisableNext(true);
+              if (!showFields)
+                setDisableNext(false);
+              else
+                setDisableNext(true);
             setDocumentId(e.target.value)
             // setPerson(person);
           }}/>
           {(showFields) &&
           <Button variant="outline-secondary" onClick={() => {
-            debugger;
             lookUpPerson();
           }}> Buscar </Button>}
         </InputGroup>
@@ -238,11 +266,11 @@ export function PersonForm({people, amount, setFinished}) {
           <ButtonsSet
             next={() => {
               person.documentId = documentId;
-              setPerson(person);
               lookUpPerson();
+              setPerson(person);
             }}
             cancel={() => {
-
+              cancel(tempRegId)
             }} disabled={disableNext}/>
 
         </>
@@ -275,7 +303,7 @@ export function PersonForm({people, amount, setFinished}) {
                   <InputGroup.Text>Primer Apellido</InputGroup.Text>
                 </InputGroup.Prepend>
                 <FormControl value={firstSurname} onChange={e => {
-                  setFirstname(e.target.value);
+                  setFirstSurname(e.target.value);
                 }}/>
               </InputGroup>
               <InputGroup className={styles.personInputGroup}>
@@ -292,8 +320,6 @@ export function PersonForm({people, amount, setFinished}) {
                 </InputGroup.Prepend>
                 <FormControl type={"date"} value={birthday} onChange={e => {
                   setBirthday(e.target.value);
-                  // person.birthday = newValue
-                  // setPerson(person)
                 }}/>
               </InputGroup>
               <InputGroup className={styles.personInputGroup}>
@@ -326,7 +352,8 @@ export function PersonForm({people, amount, setFinished}) {
                 <TextMessage name={"data-policies"}/>
                 <ToggleButton size="xs" variant="outline-secondary" checked={termsAndConditions} type="checkbox"
                               onChange={e => {
-                                setTermsAndConditions(e.target.checked)
+                                setTermsAndConditions(e.target.checked);
+                                setDisableNext(!e.target.checked);
                               }}/>
               </InputGroup>
               }
@@ -334,10 +361,13 @@ export function PersonForm({people, amount, setFinished}) {
                 if (isNew) {
                   createPerson();
                 }
-                setShowQuestions(true);
+                if (!isNew && !dataError)
+                  setShowQuestions(true);
+                else {
 
+                }
               }} cancel={() => {
-
+                cancel(tempRegId)
               }} disabled={disableNext}
               />
             </Form.Group>
@@ -397,11 +427,7 @@ function DocumentTypePicker(
   )
 }
 
-function QuestionsChecker(
-  {
-    show, setShow, confirm, deny
-  }
-) {
+function QuestionsChecker({show, setShow, confirm, deny}) {
   const [questions, setQuestions] = useState([]);
   let [confirmed, setConfirmed] = useState(true);
 
@@ -447,6 +473,7 @@ function QuestionsChecker(
             if (confirmed) {
               confirm();
             } else {
+              setConfirmed(true);
               deny();
             }
 
@@ -493,11 +520,7 @@ function Question(
 }
 
 
-function ButtonsSet(
-  {
-    cancel, next, disabled
-  }
-) {
+function ButtonsSet({cancel, next, disabled}){
   const styles = personStyles();
 
   return (
@@ -515,6 +538,10 @@ function ButtonsSet(
 }
 
 function EndMessage({registrations}) {
+  function refreshPage() {
+    window.location.reload();
+  }
+
   return (
     <>
       <TextMessage name={'registration-complete'}/>
@@ -523,20 +550,25 @@ function EndMessage({registrations}) {
         {registrations.map(reg => (reg))}
       </>
       }
-      <Link to="/registration">
-        <Button >Aceptar</Button>
-      </Link>
+      <Button onClick={() => {
+        refreshPage();
+      }}>Aceptar</Button>
     </>
   );
 }
 
 function ErrorMessage({errorMessage}) {
+
+  function refreshPage() {
+    window.location.reload();
+  }
+
   return (
     <>
       {errorMessage}
-      <Link to="/registration">
-        <Button >Aceptar</Button>
-      </Link>
+      <Button onClick={() => {
+        refreshPage()
+      }}>Aceptar</Button>
     </>
   )
 }

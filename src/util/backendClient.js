@@ -86,7 +86,17 @@ class BackendClient extends Client {
 
   }
 
-  async createPerson(person) {
+  async releaseTemporalCapacity(tempRegistrationId) {
+    const requestOptions = {
+      method: 'DELETE',
+      headers: {'Content-Type': 'application/json'}
+    };
+
+    return fetch(config['backend_url'] + '/registrations/api/registration/tempRegistration?temp_registration_id=' + tempRegistrationId.temp_id, requestOptions)
+
+  }
+
+  async   createPerson(person) {
     const requestOptions = {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},

@@ -19,6 +19,7 @@ const Routing = () => {
     <Switch> {/* The Switch decides which component to show based on the current URL.*/}
       <Route exact path='/' component={Home}/>
       <Route exact path='/registration' component={Registration}/>
+      <Route exact path='/home' component={Home}/>
     </Switch>
   );
 }
