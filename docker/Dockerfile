@@ -5,6 +5,8 @@ WORKDIR /app
 
 ENV PATH /app/node_modules/.bin:$PATH
 
+ENV BACKEND_URL=http://143.198.178.8:8000
+
 COPY package.json ./
 COPY package-lock.json ./
 
