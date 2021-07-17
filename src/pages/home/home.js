@@ -15,7 +15,7 @@ export function Home(){
         rel="noopener noreferrer"
       >
 
-        <Link to="/registro">
+        <Link to="/registration">
           <button variant="outlined">
             Registro
           </button>
