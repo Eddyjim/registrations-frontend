@@ -11,7 +11,7 @@ COPY package-lock.json ./
 RUN npm install
 #RUN npm install react-scripts -g --silent
 
-COPY .. ./
+COPY . ./
 RUN npm run build
 
 FROM nginx:stable
