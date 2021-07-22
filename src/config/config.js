@@ -23,7 +23,11 @@ if (process.env.BACKEND_HOST)
 if (process.env.BACKEND_PORT)
   configuration['backend_port'] = process.env.BACKEND_PORT;
 
+configuration = _.defaultsDeep(configuration, configJson)
+
 configuration['backend_url'] = configuration['url_schema'] + "://" + configuration['backend_host']
   + ":" + configuration["backend_port"]
 
-export default _.defaultsDeep(configuration, configJson);
+console.log("Backend: " + configuration['backend_url'] );
+
+export default configuration;
