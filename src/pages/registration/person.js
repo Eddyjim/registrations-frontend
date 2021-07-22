@@ -512,7 +512,7 @@ function Question(
           setAnswer(e.target.checked);
           setQuestionAnswer(e.target.checked);
         }}>
-        {(answer) ? "Si" : "No"}
+        {(answer) ? "No" : "Si"}
       </ToggleButton>
     </InputGroup>
   )
