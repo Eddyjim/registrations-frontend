@@ -14,6 +14,9 @@ export function Registration() {
   const [event, setEvent] = useState({});
   const styles = registrationStyles();
 
+  useEffect(() => {
+    document.title = "Registro";   }, []);
+
   return (
     <Card className={styles.registration}>
       <Card.Title>Incripciones</Card.Title>
