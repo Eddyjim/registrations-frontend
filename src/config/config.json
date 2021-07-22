@@ -1,5 +1,5 @@
 {
   "url_schema": "http",
-  "backend_host": "localhost",
+  "backend_host": "143.198.178.8",
   "backend_port": "8000"
 }
