@@ -87,8 +87,12 @@ export const personStyles = createUseStyles({
   },
   questionText: {
     width: '80%',
-  }
+  },
+});
 
 
-
+export const peopleStyles = createUseStyles({
+  confirmation: {
+    border: "none",
+  },
 });

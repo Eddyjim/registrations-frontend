@@ -3,7 +3,7 @@ import {useEffect, useState} from "react";
 import {backendClient} from "../../util/backendClient";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import BootstrapSwitchButton from 'bootstrap-switch-button-react'
-import {personStyles} from "./registrationStyles";
+import {personStyles, peopleStyles} from "./registrationStyles";
 import {cancel, TextMessage} from "./registration";
 import {Link} from "react-router-dom";
 
@@ -14,6 +14,7 @@ export function PeopleForm({amount, event, tempRegistration}) {
   const [endRegistration, setEndRegistration] = useState(false);
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState();
+  const styles = peopleStyles();
 
   function getFullName(person) {
     let name = person.firstName + " ";
@@ -42,7 +43,6 @@ export function PeopleForm({amount, event, tempRegistration}) {
         setError(true);
         setErrorMessage(json.message);
         debugger;
-
       }
     }
     fetchData();
@@ -55,7 +55,7 @@ export function PeopleForm({amount, event, tempRegistration}) {
                   tempRegId={tempRegistration}/>
       }
       {(finished) &&
-      <Card>
+      <Card className={styles.confirmation}>
         {(endRegistration && !error) &&
         <EndMessage registrations={registrations}/>
         }
@@ -64,7 +64,9 @@ export function PeopleForm({amount, event, tempRegistration}) {
         }
         {(!endRegistration) &&
         <>
-          {event.label}
+          <div> Confirmación </div>
+          <div> Servicio: {event.label} </div>
+          <div> Personas: </div>
           {people.map(person => (
             <Card>
               <div>
@@ -204,7 +206,6 @@ export function PersonForm({people, amount, setFinished, tempRegId}) {
   }
 
   function reset() {
-    debugger;
     setPerson({});
     setDocumentId("");
     setIsNew(true);
@@ -223,9 +224,11 @@ export function PersonForm({people, amount, setFinished, tempRegId}) {
       <Card.Body className={styles.personBody}>
         <QuestionsChecker show={showQuestions} setShow={setShowQuestions}
                           confirm={() => {
-                            people.value.push(person);
+                            debugger;
+                            const personClone = Object.assign({}, person);
+                            people.value.push(personClone);
                             people.setter(people.value)
-                            if (people.value.lenght === amount) {
+                            if (people.value.length === amount) {
                               setFinished(true);
                             } else {
                               if (index === amount)
@@ -426,9 +429,10 @@ function DocumentTypePicker(
   )
 }
 
-function QuestionsChecker({show, setShow, confirm, deny}) {
+function  QuestionsChecker({show, setShow, confirm, deny}) {
   const [questions, setQuestions] = useState([]);
-  let [confirmed, setConfirmed] = useState(true);
+  const [confirmed, setConfirmed] = useState(true);
+  const [accept, setAccept] = useState(false);
 
   const styles = personStyles();
 
@@ -449,12 +453,12 @@ function QuestionsChecker({show, setShow, confirm, deny}) {
     <Modal size="lg" show={show} onHide={() => {
       setShow(false)
     }}>
-      {(confirmed) &&
-      <>
-        <Modal.Header>
-          Preguntas de seguridad
-        </Modal.Header>
-        <Modal.Body>
+      <Modal.Header>
+        Preguntas de seguridad
+      </Modal.Header>
+      <Modal.Body>
+        {(confirmed) &&
+        <>
           {questions.map((question, index) => (
             <Question index={index} question={question} setQuestionAnswer={(a) => {
               question.answer = a;
@@ -462,28 +466,44 @@ function QuestionsChecker({show, setShow, confirm, deny}) {
               setQuestions(questions);
             }}/>
           ))}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="primary" onClick={() => {
-            questions.map(question => {
-              confirmed = question.answer && confirmed;
-              setConfirmed(confirmed)
-            })
-            if (confirmed) {
-              confirm();
-            } else {
+        </>
+        }
+        {(!confirmed) &&
+        <>
+          <TextMessage name={'deny'}/>
+        </>
+        }
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="primary" onClick={() => {
+          let questionsAnswer = true;
+          questions.map(question => {
+            questionsAnswer = question.answer && questionsAnswer;
+          })
+          debugger;
+          if (questionsAnswer) {
+            debugger;
+            confirm();
+          } else {
+            if (accept){
+              debugger;
+              // Reset modal validations
               setConfirmed(true);
+              setAccept(false);
+              questionsAnswer = true;
+              questions.map(question => {
+                question.answer = true;
+              });
+              setQuestions(questions);
               deny();
+            } else {
+              debugger;
+              setConfirmed(false);
+              setAccept(true);
             }
-
-          }}>Confirmar</Button>
-        </Modal.Footer>
-      </>
-      }
-      {(!confirmed) && <Card>
-        <TextMessage name={'deny'}/>
-      </Card>
-      }
+          }
+        }}>Confirmar</Button>
+      </Modal.Footer>
     </Modal>
   );
 }
@@ -519,7 +539,7 @@ function Question(
 }
 
 
-function ButtonsSet({cancel, next, disabled}){
+function ButtonsSet({cancel, next, disabled}) {
   const styles = personStyles();
 
   return (
