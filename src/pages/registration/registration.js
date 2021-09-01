@@ -62,9 +62,7 @@ function EventSelection({count, tempRegistration, onInscription, event}) {
         <Card.Body className={styles.eventPickerBody}>
           <EventPicker event={event}/>
           <InputGroup>
-            <InputGroup.Prepend className={styles.eventPickerLabel}>
-              <InputGroup.Text>Número de personas a registrar:</InputGroup.Text>
-            </InputGroup.Prepend>
+              <InputGroup.Text className={styles.eventPickerLabel}>Número de personas a registrar:</InputGroup.Text>
             <FormControl value={count.value}/>
             <Button variant="danger" onClick={() => {
               if (count.value > 0) {

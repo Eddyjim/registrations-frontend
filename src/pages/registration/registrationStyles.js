@@ -21,7 +21,10 @@ export const registrationStyles = createUseStyles({
     float: 'inherit'
   },
   eventPickerLabel: {
-    width: '40%'
+    textAlign: "left",
+    // width: '40%',
+    height: 'auto',
+    wordWrap: "break-word"
   },
   sessionPicker: {
     width: '60%',
@@ -54,15 +57,15 @@ export const personStyles = createUseStyles({
     marginTop: 20,
   },
   personInputGroup: {
-    width: '50%',
+    width: '100%',
     float: 'left',
   },
   personInputLabel: {
-    width: '30%',
+    width: '100%',
     float: 'left',
   },
   documentTypeDropdown: {
-    width: '70%',
+    width: '100%',
   },
   documentTypeDropdownLabel: {
     width: '100%',
